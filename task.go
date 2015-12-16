@@ -12,7 +12,6 @@ import (
 
 const (
   QUERY_LIMIT = 100
-  RATING_AVG  = 500
   ENTITY_NAME = "foo.bar"
 )
 
@@ -25,14 +24,14 @@ var (
   q = datastore.NewQuery(ENTITY_NAME).Limit(QUERY_LIMIT)
 )
 
-func resetRating(ctx context.Context, cursorStr string, numUpdated int) {
-  log.Debugf(ctx, "[Tasks.resetRating] initiated, cursorStr: %v", cursorStr)
+func myFunc(ctx context.Context, cursorStr string, numUpdated int) {
+  log.Debugf(ctx, "[Tasks.myFunc] initiated, cursorStr: %v", cursorStr)
 
   // set cursor if possible
   if cursorStr != "" {
     cursor, err := datastore.DecodeCursor(cursorStr)
     if err != nil {
-      log.Errorf(ctx, "[Tasks.resetRating] error: %v", err)
+      log.Errorf(ctx, "[Tasks.myFunc] error: %v", err)
       return
     } else {
       q = q.Start(cursor)
@@ -49,7 +48,7 @@ func resetRating(ctx context.Context, cursorStr string, numUpdated int) {
       break
     }
     if err != nil {
-      log.Errorf(ctx, "[Tasks.resetRating] error fetching next state: %v", err)
+      log.Errorf(ctx, "[Tasks.myFunc] error fetching next state: %v", err)
       break
     }
     more = true
@@ -60,20 +59,20 @@ func resetRating(ctx context.Context, cursorStr string, numUpdated int) {
   if len(keysToPut) > 0 {
     _, err := datastore.PutMulti(ctx, keysToPut, statesToPut)
     if err != nil {
-      log.Errorf(ctx, "[Tasks.resetRating] error multiPut: %v", err)
+      log.Errorf(ctx, "[Tasks.myFunc] error multiPut: %v", err)
     }
     numUpdated += len(keysToPut)
-    log.Infof(ctx, "[Tasks.resetRating] Put %v entities to Datastore for a total of %v",
+    log.Infof(ctx, "[Tasks.myFunc] Put %v entities to Datastore for a total of %v",
       len(keysToPut), numUpdated)
   }
 
   // Get updated cursor and store it for next time.
   if cursor, err := t.Cursor(); more && err == nil {
-    resetRatingTask := delay.Func("resetRatingTaskKey", resetRating)
-    resetRatingTask.Call(ctx, cursor.String(), numUpdated)
+    myTask := delay.Func("myTaskKey", myFunc)
+    myTask.Call(ctx, cursor.String(), numUpdated)
   }
   if !more {
-    log.Infof(ctx, "[Tasks.resetRating] task complete with %v updates",
+    log.Infof(ctx, "[Tasks.myFunc] task complete with %v updates",
       numUpdated)
   }
 }
